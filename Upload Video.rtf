@@ -1,0 +1,146 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2638
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 import \{ useState, useEffect, useRef \} from "react";\
+import \{ useParams \} from "react-router-dom";\
+import "reactjs-popup/dist/index.css";\
+import "./UploadVideo.scss";\
+import AuthServices from "../../Core/services/AuthService";\
+import Select from "react-select";\
+import "react-datepicker/dist/react-datepicker.css";\
+import \{\
+  NotificationManager,\
+\} from "react-notifications";\
+import useTranslate from "../../hooks/useTranslate";\
+\
+const UploadVideo = () => \{\
+  const [translate] = useTranslate();\
+  const videoFile = useRef();\
+  const [file, setFile] = useState();\
+  const [updated, setUpdated] = useState(false)\
+  const [name, setName] = useState('')\
+  const [error, setErrMsg] = useState('')\
+\
+  const id = useParams().id;\
+  const handleChange = (event) => \{\
+    setFile(event.target.files[0]);\
+  \};\
+\
+  const getData = () => \{\
+    AuthServices.getUploadVideoDetails(id)\
+      .then((response) => \{\
+        setName(response.data.user_info.name);\
+      \})\
+      .catch((error) => \{\
+        console.log("Fetch Candidates error: ", error);\
+      \});\
+  \};\
+\
+  const onClear = () => \{\}\
+\
+  const onSubmit = () => \{\
+    if (file) \{\
+      // data.formId = id;\
+      const formData = new FormData();\
+      formData.append("file", file);\
+      formData.append("formId", id);\
+      const config = \{\
+        headers: \{\
+          "content-type": "multipart/form-data",\
+        \},\
+      \};\
+\
+      AuthServices.postVideoUpdate(formData, config)\
+        .then((response) => \{\
+          console.log(response);\
+        \})\
+        .catch((error) => \{\
+          console.log(error);\
+        \});\
+    \} else \{\
+      setErrMsg(error.response.data.message);\
+      NotificationManager.warning("Please fill all fields", "Missing info");\
+    \}\
+  \};\
+\
+  useEffect(() => \{\
+    getData();\
+  \}, []);\
+\
+\
+  return (\
+    <section className="missing-info-outer ">\
+      <div className="missing-info-outer-inner">\
+        <div className="page-header">\{translate("candidateMissingData")\}</div>\
+        \{error ? (\
+          <div className="form-details">\
+            <div className="greeting-name">Hi,</div>\
+            <div className="form-details-description">\
+              \{translate("thisisaninvalidOrAlreadyFilledForm")\}\
+            </div>\
+          </div>\
+        ) : (\
+          <div>\
+            <div className="form-details">\
+              <div className="greeting-name">Hi \{name\},</div>\
+\
+              \{updated === false ? (\
+                <div className="form-details-description">\
+                  \{translate("validformfirstvideo")\}\
+                </div>\
+              ) : (\
+                <div className="form-details-description">\
+                  \{translate("validformsecondvideo")\}\
+                </div>\
+              )\}\
+            </div>\
+            \{!updated && (\
+              <div>\
+                <div>\
+                  <div className="user_details_section">\
+                    <div>\
+                      <div className="input-group-container">\
+                        <label className="col-4">\{translate("video")\}*</label>\
+                        <input\
+                          ref=\{videoFile\}\
+                          name="dob"\
+                          type="file"\
+                          accept=".mov,.mp4"\
+                          placeholder=\{translate("DOB")\}\
+                          style=\{\{ border: "none", height: "auto" \}\}\
+                          onChange=\{handleChange\}\
+                        />\
+                      </div>\
+                    </div>\
+                  </div>\
+                </div>\
+                <div className="action-btn-outer">\
+                  <button\
+                    className="action-btn cancel-btn"\
+                    onClick=\{() => onClear()\}\
+                  >\
+                    \{translate("clear")\}\
+                  </button>\
+                  <button\
+                    className="action-btn submit-btn"\
+                    onClick=\{() => onSubmit()\}\
+                  >\
+                    \{translate("submit")\}\
+                  </button>\
+                </div>\
+              </div>\
+            )\}\
+          </div>\
+        )\}\
+      </div>\
+      \{/* <NotificationContainer /> */\}\
+    </section>\
+  );\
+\};\
+\
+export default UploadVideo;\
+}
