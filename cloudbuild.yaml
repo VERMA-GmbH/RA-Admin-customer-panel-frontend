@@ -1,0 +1,33 @@
+steps:
+  # Build the container image
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "gcr.io/recruitment-frontend-372414/ra-admin-panel-frontend-dev",
+        ".",
+      ]
+    id: Build
+  # Push the container image to Container Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      ["push", "gcr.io/recruitment-frontend-372414/ra-admin-panel-frontend-dev"]
+    id: Push
+    timeout: 1000s
+  # Deploy container image to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      [
+        "run",
+        "deploy",
+        "ra-admin-panel-frontend-dev",
+        "--image",
+        "gcr.io/recruitment-frontend-372414/ra-admin-panel-frontend-dev",
+        "--region",
+        "us-central1",
+      ]
+    id: Deploy
+images:
+  - gcr.io/recruitment-frontend-372414/ra-admin-panel-frontend-dev
