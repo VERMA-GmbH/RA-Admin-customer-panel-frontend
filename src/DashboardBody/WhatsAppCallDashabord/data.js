@@ -1,55 +1,3 @@
-export const data = [
-  {
-    id: "1234",
-    firmName: "Verma GmbH",
-    ContactNo: "9123458844",
-    email: "infoavermass.de",
-    state: "Nebraska",
-  },
-  {
-    id: "1234",
-    firmName: "Facebook",
-    ContactNo: "9123458844",
-    email: "Facebook infoavermass.de",
-    state: "Nebraska",
-  },
-  {
-    id: "1234",
-    firmName: "Facebook",
-    ContactNo: "9123458844",
-    email: "Facebook infoavermass.de",
-    state: "Nebraska",
-  },
-  {
-    id: "1234",
-    firmName: "Facebook",
-    ContactNo: "9123458844",
-    email: "Facebook infoavermass.de",
-    state: "Nebraska",
-  },
-  {
-    id: "1234",
-    firmName: "Facebook",
-    ContactNo: "9123458844",
-    email: "Facebook infoavermass.de",
-    state: "Nebraska",
-  },
-  {
-    id: "1234",
-    firmName: "Facebook",
-    ContactNo: "9123458844",
-    email: "Facebook infoavermass.de",
-    state: "Nebraska",
-  },
-  {
-    id: "1234",
-    firmName: "Facebook",
-    ContactNo: "9123458844",
-    email: "Facebook infoavermass.de",
-    state: "Nebraska",
-  },
-];
-
 //50 us states array
 export const states = [
   "Alabama",
@@ -103,4 +51,16 @@ export const states = [
   "Wisconsin",
   "Wyoming",
   "Puerto Rico",
+];
+
+
+export const status = [
+  {
+    "lable":"Active",
+    "value":"active"
+  },
+  {
+    "lable":"Deactive",
+    "value":"deactive"
+  }
 ];

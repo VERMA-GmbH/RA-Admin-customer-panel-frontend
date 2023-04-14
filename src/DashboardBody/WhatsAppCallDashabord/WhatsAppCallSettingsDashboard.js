@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import MaterialReactTable from "material-react-table";
 import {
   Box,
@@ -7,30 +7,63 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
   IconButton,
+  InputLabel,
   MenuItem,
+  Select,
   Stack,
   TextField,
   Tooltip,
 } from "@mui/material";
-import { Delete, Edit } from "@mui/icons-material";
-import { data, states } from "./data";
+import { Edit } from "@mui/icons-material";
+import { states, status } from "./data";
+import axios from "axios";
+
+
+const base_url = "http://127.0.0.1:8000/api/v1/contact/"
 
 const Example = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [tableData, setTableData] = useState(() => data);
+  const [tableData, setTableData] = useState([]);
   const [validationErrors, setValidationErrors] = useState({});
 
+  useEffect(() =>  {
+    fetchWhatsappData()
+  }, [])
+
+  const fetchWhatsappData = () => {
+    axios.get(`${base_url}whatsappsetting/`)
+        .then((response) => {
+          setTableData(response.data.data)
+        })
+  }
+
   const handleCreateNewRow = (values) => {
-    tableData.push(values);
-    setTableData([...tableData]);
+    axios({
+      method: 'post',
+      url: `${base_url}whatsappsetting/`,
+      data: values,
+      headers: {
+        'Content-Type': 'application/json'
+      }, 
+    }).then((response) =>{
+      fetchWhatsappData()
+    })
   };
 
   const handleSaveRowEdits = async ({ exitEditingMode, row, values }) => {
     if (!Object.keys(validationErrors).length) {
-      tableData[row.index] = values;
-      //send/receive api updates here, then refetch or update local table data for re-render
-      setTableData([...tableData]);
+      await axios({
+        method: 'put',
+        url: `${base_url}whatsappsetting/${row.original.id}`,
+        data: values,
+        headers: {
+          'Content-Type': 'application/json'
+        }, 
+      }).then((resp) => {
+        fetchWhatsappData();
+      })
       exitEditingMode(); //required to exit editing mode and close modal
     }
   };
@@ -39,20 +72,6 @@ const Example = () => {
     setValidationErrors({});
   };
 
-  const handleDeleteRow = useCallback(
-    (row) => {
-      if (
-        // !confirm(`Are you sure you want to delete ${row.getValue("firstName")}`)
-        console.log("delete")
-      ) {
-        return;
-      }
-      //send api delete request here, then refetch or update local table data for re-render
-      tableData.splice(row.index, 1);
-      setTableData([...tableData]);
-    },
-    [tableData]
-  );
 
   const getCommonEditTextFieldProps = useCallback(
     (cell) => {
@@ -86,7 +105,7 @@ const Example = () => {
   const columns = useMemo(
     () => [
       {
-        accessorKey: "id",
+        accessorKey: "whatsapp_id",
         header: "ID",
         enableColumnOrdering: false,
         enableEditing: false, //disable editing on this column
@@ -94,7 +113,7 @@ const Example = () => {
         size: 80,
       },
       {
-        accessorKey: "firmName",
+        accessorKey: "name",
         header: "Firm Name",
         size: 140,
         muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
@@ -102,7 +121,7 @@ const Example = () => {
         }),
       },
       {
-        accessorKey: "ContactNo",
+        accessorKey: "contact",
         header: "Firm Contact No",
         size: 140,
         muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
@@ -119,7 +138,7 @@ const Example = () => {
       },
 
       {
-        accessorKey: "state",
+        accessorKey: "location",
         header: "Firm Location",
         muiTableBodyCellEditTextFieldProps: {
           select: true, //change to select for a dropdown
@@ -130,9 +149,60 @@ const Example = () => {
           )),
         },
       },
+    
+      {
+        accessorKey: "status",
+        header: "Firm status",
+        muiTableBodyCellEditTextFieldProps: {
+          select: true, //change to select for a dropdown
+          children: status.map((status) => (
+            <MenuItem key={status.value} value={status.value}>
+              {status.lable}
+            </MenuItem>
+          )),
+        },
+      },
     ],
     [getCommonEditTextFieldProps]
-  );
+);
+
+const addFirmColumns = useMemo(
+  () => [
+    {
+      accessorKey: "whatsapp_id",
+      header: "ID",
+      enableColumnOrdering: false,
+      enableEditing: false, //disable editing on this column
+      enableSorting: false,
+      size: 80,
+    },
+    {
+      accessorKey: "name",
+      header: "Firm Name",
+      size: 140,
+      muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
+        ...getCommonEditTextFieldProps(cell),
+      }),
+    },
+    {
+      accessorKey: "contact",
+      header: "Firm Contact No",
+      size: 140,
+      muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
+        ...getCommonEditTextFieldProps(cell),
+      }),
+    },
+    {
+      accessorKey: "email",
+      header: "Firm Email",
+      muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
+        ...getCommonEditTextFieldProps(cell),
+        type: "email",
+      }),
+    },
+  ],
+  [getCommonEditTextFieldProps]
+);
 
   return (
     <>
@@ -151,17 +221,12 @@ const Example = () => {
         enableColumnOrdering
         enableEditing
         onEditingRowSave={handleSaveRowEdits}
-        onEditingRowCancel={handleCancelRowEdits}
+        onEditingRowCancel={handleCancelRowEdits} 
         renderRowActions={({ row, table }) => (
           <Box sx={{ display: "flex", gap: "1rem" }}>
             <Tooltip arrow placement="left" title="Edit">
               <IconButton onClick={() => table.setEditingRow(row)}>
                 <Edit />
-              </IconButton>
-            </Tooltip>
-            <Tooltip arrow placement="right" title="Delete">
-              <IconButton color="error" onClick={() => handleDeleteRow(row)}>
-                <Delete />
               </IconButton>
             </Tooltip>
           </Box>
@@ -177,7 +242,7 @@ const Example = () => {
         )}
       />
       <CreateNewAccountModal
-        columns={columns}
+        columns={addFirmColumns}
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onSubmit={handleCreateNewRow}
@@ -214,6 +279,7 @@ export const CreateNewAccountModal = ({ open, columns, onClose, onSubmit }) => {
             }}
           >
             {columns.map((column) => (
+              <>
               <TextField
                 key={column.accessorKey}
                 label={column.header}
@@ -222,7 +288,29 @@ export const CreateNewAccountModal = ({ open, columns, onClose, onSubmit }) => {
                   setValues({ ...values, [e.target.name]: e.target.value })
                 }
               />
+              </>
+              
             ))}
+            <FormControl fullWidth>
+              <InputLabel id="demo-simple-select-label">Firm Location</InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                label="location"
+                name="location"
+                onChange={(e) =>
+                  setValues({ ...values, "location": e.target.value })
+                }
+              >
+                {
+                  states.map(state => (
+                    <MenuItem value={state}>{state}</MenuItem>
+
+                  ))
+                }
+
+              </Select>
+          </FormControl>
           </Stack>
         </form>
       </DialogContent>

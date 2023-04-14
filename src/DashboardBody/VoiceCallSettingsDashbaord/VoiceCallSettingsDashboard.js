@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useEffect, useState } from "react";
 import MaterialReactTable from "material-react-table";
 import {
   Box,
@@ -14,23 +14,52 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Delete, Edit } from "@mui/icons-material";
-import { data, states } from "./data";
+import { status, states } from "./data";
+import axios from "axios";
+
+const base_url = "http://127.0.0.1:8000/api/v1/contact/"
 
 const Example = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [tableData, setTableData] = useState(() => data);
+  const [tableData, setTableData] = useState(() => ([]));
   const [validationErrors, setValidationErrors] = useState({});
 
+  useEffect(() =>  {
+    fetchCallData()
+  }, [])
+
+  const fetchCallData = () => {
+    axios.get(`${base_url}callsetting/`)
+        .then((response) => {
+          setTableData(response.data.data)
+        })
+  };
+
   const handleCreateNewRow = (values) => {
-    tableData.push(values);
-    setTableData([...tableData]);
+    axios({
+      method: 'post',
+      url: `${base_url}callsetting/`,
+      data: values,
+      headers: {
+        'Content-Type': 'application/json'
+      }, 
+    }).then((resp) => {
+      fetchCallData();
+    })
   };
 
   const handleSaveRowEdits = async ({ exitEditingMode, row, values }) => {
     if (!Object.keys(validationErrors).length) {
-      tableData[row.index] = values;
-      //send/receive api updates here, then refetch or update local table data for re-render
-      setTableData([...tableData]);
+      await axios({
+        method: 'put',
+        url: `${base_url}callsetting/${row.original.id}`,
+        data: values,
+        headers: {
+          'Content-Type': 'application/json'
+        }, 
+      }).then((resp) => {
+        fetchCallData();
+      })
       exitEditingMode(); //required to exit editing mode and close modal
     }
   };
@@ -39,20 +68,6 @@ const Example = () => {
     setValidationErrors({});
   };
 
-  const handleDeleteRow = useCallback(
-    (row) => {
-      if (
-        // !confirm(`Are you sure you want to delete ${row.getValue("firstName")}`)
-        console.log("delete")
-      ) {
-        return;
-      }
-      //send api delete request here, then refetch or update local table data for re-render
-      tableData.splice(row.index, 1);
-      setTableData([...tableData]);
-    },
-    [tableData]
-  );
 
   const getCommonEditTextFieldProps = useCallback(
     (cell) => {
@@ -88,7 +103,7 @@ const Example = () => {
   const columns = useMemo(
     () => [
       {
-        accessorKey: "id",
+        accessorKey: "call_id",
         header: "ID",
         enableColumnOrdering: false,
         enableEditing: false, //disable editing on this column
@@ -96,16 +111,16 @@ const Example = () => {
         size: 80,
       },
       {
-        accessorKey: "firstName",
-        header: "First Name",
+        accessorKey: "firm_name",
+        header: "Firm Name",
         size: 140,
         muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
           ...getCommonEditTextFieldProps(cell),
         }),
       },
       {
-        accessorKey: "lastName",
-        header: "Last Name",
+        accessorKey: "from_calling_number",
+        header: "From Calling Number",
         size: 140,
         muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
           ...getCommonEditTextFieldProps(cell),
@@ -120,8 +135,8 @@ const Example = () => {
         }),
       },
       {
-        accessorKey: "age",
-        header: "Age",
+        accessorKey: "bot_number",
+        header: "Bot Number",
         size: 80,
         muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
           ...getCommonEditTextFieldProps(cell),
@@ -129,16 +144,63 @@ const Example = () => {
         }),
       },
       {
-        accessorKey: "state",
-        header: "State",
+        accessorKey: "status",
+        header: "Firm status",
         muiTableBodyCellEditTextFieldProps: {
           select: true, //change to select for a dropdown
-          children: states.map((state) => (
-            <MenuItem key={state} value={state}>
-              {state}
+          children: status.map((status) => (
+            <MenuItem key={status.value} value={status.value}>
+              {status.lable}
             </MenuItem>
           )),
         },
+      },
+    ],
+    [getCommonEditTextFieldProps]
+  );
+
+  const addAccountColumns = useMemo(
+    () => [
+      {
+        accessorKey: "call_id",
+        header: "ID",
+        enableColumnOrdering: false,
+        enableEditing: false, //disable editing on this column
+        enableSorting: false,
+        size: 80,
+      },
+      {
+        accessorKey: "firm_name",
+        header: "Firm Name",
+        size: 140,
+        muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
+          ...getCommonEditTextFieldProps(cell),
+        }),
+      },
+      {
+        accessorKey: "from_calling_number",
+        header: "From Calling Number",
+        size: 140,
+        muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
+          ...getCommonEditTextFieldProps(cell),
+        }),
+      },
+      {
+        accessorKey: "email",
+        header: "Email",
+        muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
+          ...getCommonEditTextFieldProps(cell),
+          type: "email",
+        }),
+      },
+      {
+        accessorKey: "bot_number",
+        header: "Bot Number",
+        size: 80,
+        muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
+          ...getCommonEditTextFieldProps(cell),
+          type: "number",
+        }),
       },
     ],
     [getCommonEditTextFieldProps]
@@ -169,11 +231,6 @@ const Example = () => {
                 <Edit />
               </IconButton>
             </Tooltip>
-            <Tooltip arrow placement="right" title="Delete">
-              <IconButton color="error" onClick={() => handleDeleteRow(row)}>
-                <Delete />
-              </IconButton>
-            </Tooltip>
           </Box>
         )}
         renderTopToolbarCustomActions={() => (
@@ -187,7 +244,7 @@ const Example = () => {
         )}
       />
       <CreateNewAccountModal
-        columns={columns}
+        columns={addAccountColumns}
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onSubmit={handleCreateNewRow}
@@ -232,7 +289,7 @@ export const CreateNewAccountModal = ({ open, columns, onClose, onSubmit }) => {
                   setValues({ ...values, [e.target.name]: e.target.value })
                 }
               />
-            ))}
+              ))}
           </Stack>
         </form>
       </DialogContent>
